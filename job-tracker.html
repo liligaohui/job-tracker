@@ -1,0 +1,390 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Hub</title>
+<link rel="stylesheet" href="job-tracker.css">
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="hero-copy">
+      <div class="hero-kicker">Search command center</div>
+      <h1>Career Hub</h1>
+      <p>Track applications, interview rounds, follow-ups, and coffee chats in one place without losing the next step.</p>
+    </div>
+    <div class="header-right">
+      <button class="btn" id="sync-connect-btn" onclick="connectSyncFolder()">Connect CSV sync</button>
+      <button class="btn" id="sync-reload-btn" onclick="reloadFromCsv()" style="display:none">Reload CSV</button>
+      <button class="btn" id="sync-now-btn" onclick="manualSync()" style="display:none">Sync now</button>
+      <button class="btn" id="sync-disconnect-btn" onclick="disconnectSync()" style="display:none">Disconnect</button>
+      <button class="btn" onclick="exportData()">Export</button>
+      <button class="btn" onclick="triggerImport()">Import</button>
+      <span class="sync-status off" id="sync-status">Saving in browser only</span>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="switchView('jobs',this)">Applications</button>
+    <button class="view-tab" onclick="switchView('summary',this)">Summary</button>
+    <button class="view-tab" onclick="switchView('coffee',this)">Coffee chats</button>
+    <button class="view-tab" onclick="switchView('help',this)">How to use</button>
+  </div>
+
+  <!-- Applications view -->
+  <div id="view-jobs">
+    <div class="toolbar">
+      <div class="filter-row" id="filter-row"></div>
+      <button class="btn btn-primary" type="button" onclick="openNewJob()">+ Add application</button>
+    </div>
+    <section class="section-card search-card">
+      <div class="section-title-row">
+        <div>
+          <div class="section-label">Search applications</div>
+          <div class="section-copy">Filter the list by company, position, and application date.</div>
+        </div>
+        <button class="btn" type="button" onclick="clearSearchFilters()">Clear search</button>
+      </div>
+      <div class="search-grid">
+        <label class="field">
+          <span class="field-label">Company name</span>
+          <input class="inline-field" id="search-company" placeholder="Search company" oninput="setSearchFilter('company', this.value)">
+        </label>
+        <label class="field">
+          <span class="field-label">Position</span>
+          <input class="inline-field" id="search-role" placeholder="Search position" oninput="setSearchFilter('role', this.value)">
+        </label>
+        <label class="field">
+          <span class="field-label">Applied from</span>
+          <input class="inline-field" id="search-date-from" type="date" onchange="setSearchFilter('dateFrom', this.value)">
+        </label>
+        <label class="field">
+          <span class="field-label">Applied to</span>
+          <input class="inline-field" id="search-date-to" type="date" onchange="setSearchFilter('dateTo', this.value)">
+        </label>
+      </div>
+      <div class="list-controls">
+        <label class="field sort-field">
+          <span class="field-label">Sort by</span>
+          <select class="inline-field" id="job-sort" onchange="setJobSort(this.value)">
+            <option value="date-desc">Application date: newest first</option>
+            <option value="date-asc">Application date: oldest first</option>
+            <option value="stage-desc">Process: furthest along</option>
+            <option value="stage-asc">Process: earliest stage</option>
+          </select>
+        </label>
+        <div class="list-control-note">10 applications per page</div>
+      </div>
+    </section>
+    <div class="list-summary" id="job-results-summary"></div>
+    <div class="app-list" id="app-list"></div>
+    <div class="list-pagination" id="job-pagination"></div>
+  </div>
+
+  <!-- Summary view -->
+  <div id="view-summary" style="display:none">
+    <div class="summary-shell">
+      <section class="section-card analytics-card summary-panel">
+        <div class="section-title-row">
+          <div>
+            <div class="section-label">Interview pipeline</div>
+            <div class="section-copy">See how applications are moving through first interview, second interview, and offer stages.</div>
+          </div>
+          <label class="field chart-period-field">
+            <span class="field-label">Time period</span>
+            <select class="inline-field" id="chart-period" onchange="setChartPeriod(this.value)">
+              <option value="30d">Last 30 days</option>
+              <option value="90d" selected>Last 90 days</option>
+              <option value="180d">Last 6 months</option>
+              <option value="365d">Last 12 months</option>
+              <option value="all">All time</option>
+            </select>
+          </label>
+        </div>
+        <div class="summary-note">First interview and second interview counts come from the first and second saved interview rounds for each job.</div>
+        <div class="chart-summary" id="pipeline-summary"></div>
+        <div class="pipeline-chart" id="pipeline-chart"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Coffee chats view -->
+  <div id="view-coffee" style="display:none">
+    <div class="toolbar toolbar-end">
+      <button class="btn btn-primary" type="button" onclick="openNewCC()">+ Add chat</button>
+    </div>
+    <div class="cc-list" id="cc-list"></div>
+  </div>
+
+  <!-- Help view -->
+  <div id="view-help" style="display:none">
+    <div class="guide-grid">
+      <section class="section-card guide-card">
+        <div class="section-label">Quick start</div>
+        <div class="guide-steps">
+          <div class="guide-step"><strong>1.</strong> Use the `Applications` tab to add a job, company, date, and status.</div>
+          <div class="guide-step"><strong>2.</strong> Add interview rounds as they happen, then update the job as you move forward.</div>
+          <div class="guide-step"><strong>3.</strong> Use `Summary` to see your pipeline over time.</div>
+          <div class="guide-step"><strong>4.</strong> Use `Coffee chats` to save networking conversations and follow-ups.</div>
+        </div>
+      </section>
+
+      <section class="section-card guide-card">
+        <div class="section-label">Saving your data</div>
+        <div class="guide-copy">By default, Career Hub saves in your browser. When CSV sync is connected, it can also reload the CSV files so the HTML matches them.</div>
+        <div class="guide-steps">
+          <div class="guide-step">Open the same HTML again in the same browser and your saved records should still be there.</div>
+          <div class="guide-step">If you switch browser, use private mode, or clear browser data, those records may not appear.</div>
+          <div class="guide-step">If you want the page to follow the CSV files, connect CSV sync once and use `Reload CSV` after editing the files.</div>
+          <div class="guide-step">Use `Export` regularly if you want a manual backup file.</div>
+        </div>
+      </section>
+
+      <section class="section-card guide-card">
+        <div class="section-label">CSV sync and Excel</div>
+        <div class="guide-copy">Career Hub does not write directly into the Excel workbook. It writes CSV files, and Excel reads those CSV files.</div>
+        <div class="guide-path" id="sync-folder-hint">Suggested sync folder: Detecting app folder...</div>
+        <div class="guide-steps">
+          <div class="guide-step">Click `Connect CSV sync` in Chrome or Edge.</div>
+          <div class="guide-step">Choose the folder shown above. That is the app folder, not the Excel file itself.</div>
+          <div class="guide-step">After the first connection, Career Hub will try to remember the same sync folder in this browser.</div>
+          <div class="guide-step">Use `Reload CSV` if you update the CSV files outside the app and want Career Hub to show those changes.</div>
+          <div class="guide-step">When you finalize a record, click `Sync now` or confirm the sync status is green before you close the page.</div>
+          <div class="guide-step">After you save in Career Hub, the app updates `applications.csv`, `coffee-chats.csv`, and `interview-rounds.csv`.</div>
+          <div class="guide-step">Then open `JobTracker.xlsx` or press `Refresh All` in Excel to see the latest data.</div>
+        </div>
+      </section>
+
+      <section class="section-card guide-card">
+        <div class="section-label">Best practice</div>
+        <div class="guide-steps">
+          <div class="guide-step">Use Career Hub as the main place where you enter and edit data.</div>
+          <div class="guide-step">Use Excel as your reporting and filtering view.</div>
+          <div class="guide-step">Keep the raw CSV files closed while syncing.</div>
+          <div class="guide-step">Use the search filters on `Applications` and the tree view in `Summary` to review progress quickly.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>Career Hub was created by Lili Gao. If you'd like to learn more, please feel free to get in touch.</p>
+  </footer>
+</div>
+
+<!-- Job detail / edit modal -->
+<div class="overlay" id="job-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-eyebrow">Applications</div>
+      <div class="modal-title" id="job-modal-title">Add application</div>
+      <div class="modal-subtitle">Save the basics first, then log each interview step so nothing gets lost.</div>
+      <div class="modal-hero-fields">
+        <label class="field">
+          <span class="field-label">Company</span>
+          <input class="inline-field" id="j-company" placeholder="Company name">
+        </label>
+        <label class="field">
+          <span class="field-label">Role</span>
+          <input class="inline-field" id="j-role" placeholder="Role or title">
+        </label>
+      </div>
+      <div class="status-stack">
+        <div class="field-label">Status</div>
+        <div class="status-row" id="status-row">
+          <div class="status-opt" data-s="Applied" onclick="setStatus(this)">Applied</div>
+          <div class="status-opt" data-s="Phone screen" onclick="setStatus(this)">Phone screen</div>
+          <div class="status-opt" data-s="Interview" onclick="setStatus(this)">Interview</div>
+          <div class="status-opt" data-s="Offer" onclick="setStatus(this)">Offer</div>
+          <div class="status-opt" data-s="Rejected" onclick="setStatus(this)">Rejected</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <section class="section-card">
+        <div class="section-title-row">
+          <div>
+            <div class="section-label">Interview rounds</div>
+            <div class="section-copy">Add each step as it happens. If you fill the draft below and click Save, it will be recorded automatically.</div>
+          </div>
+        </div>
+        <div class="rounds-list" id="rounds-list"></div>
+        <div class="add-round-form" id="add-round-form">
+          <div class="helper-text">Quick picks</div>
+          <div class="preset-row">
+            <button class="preset-chip" type="button" onclick="fillRoundType('Recruiter screen')">Recruiter screen</button>
+            <button class="preset-chip" type="button" onclick="fillRoundType('Hiring manager')">Hiring manager</button>
+            <button class="preset-chip" type="button" onclick="fillRoundType('Technical interview')">Technical interview</button>
+            <button class="preset-chip" type="button" onclick="fillRoundType('Case study')">Case study</button>
+            <button class="preset-chip" type="button" onclick="fillRoundType('Panel')">Panel</button>
+            <button class="preset-chip" type="button" onclick="fillRoundType('Final round')">Final round</button>
+          </div>
+          <div class="field-grid">
+            <label class="field field-span-2">
+              <span class="field-label">Round</span>
+              <input id="r-type" list="round-type-options" placeholder="Example: case study, onsite, final round" onkeydown="handleRoundDraftKeydown(event)">
+            </label>
+            <label class="field">
+              <span class="field-label">Date</span>
+              <input type="date" id="r-date">
+            </label>
+            <label class="field">
+              <span class="field-label">Outcome</span>
+              <select id="r-outcome">
+                <option value="pending">Pending</option>
+                <option value="pass">Passed</option>
+                <option value="fail">Did not pass</option>
+              </select>
+            </label>
+            <label class="field field-span-2">
+              <span class="field-label">Notes</span>
+              <input id="r-notes" placeholder="Optional details, feedback, prep notes" onkeydown="handleRoundDraftKeydown(event)">
+            </label>
+          </div>
+          <div class="draft-row">
+            <div class="helper-text">Tip: press Enter in these fields or use the main Save button and this draft round will still be added.</div>
+            <div class="round-action-buttons">
+              <button class="btn" id="round-cancel-btn" type="button" onclick="cancelRoundEdit()" style="display:none">Cancel</button>
+              <button class="btn btn-sm btn-primary" id="round-submit-btn" type="button" onclick="addRound()">Add step</button>
+            </div>
+          </div>
+          <datalist id="round-type-options">
+            <option value="Recruiter screen">
+            <option value="Hiring manager">
+            <option value="Technical interview">
+            <option value="Case study">
+            <option value="Panel">
+            <option value="Final round">
+          </datalist>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-label">Details</div>
+        <div class="field-grid">
+          <label class="field">
+            <span class="field-label">Application date</span>
+            <input class="inline-field" id="j-date" type="date">
+          </label>
+          <label class="field field-span-2">
+            <span class="field-label">Job posting URL</span>
+            <input class="inline-field" id="j-link" placeholder="Paste the job posting link">
+          </label>
+          <label class="field">
+            <span class="field-label">Recruiter name</span>
+            <input class="inline-field" id="j-rec-name" placeholder="Optional">
+          </label>
+          <label class="field">
+            <span class="field-label">Recruiter email</span>
+            <input class="inline-field" id="j-rec-email" placeholder="Optional">
+          </label>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-label">Documents</div>
+        <div class="field-grid">
+          <label class="field field-span-2">
+            <span class="field-label">CV path</span>
+            <input class="inline-field" id="j-cv" placeholder="Example: C:\Resume\CV_2026.pdf">
+          </label>
+          <label class="field">
+            <span class="field-label">CV version</span>
+            <input class="inline-field" id="j-cv-label" placeholder="Example: PM v2">
+          </label>
+          <label class="field field-span-3">
+            <span class="field-label">Cover letter</span>
+            <input class="inline-field" id="j-cl" placeholder="Example: C:\Resume\CoverLetter.pdf">
+          </label>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-label">Follow-up</div>
+        <div class="field-grid">
+          <label class="field">
+            <span class="field-label">Reminder date</span>
+            <input class="inline-field" id="j-rem-date" type="date">
+          </label>
+          <label class="field field-span-2">
+            <span class="field-label">Reminder note</span>
+            <input class="inline-field" id="j-rem-note" placeholder="Example: follow up with recruiter">
+          </label>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-label">Notes</div>
+        <textarea class="notes-field" id="j-notes" placeholder="Anything worth remembering about this application..."></textarea>
+      </section>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-danger" id="j-del-btn" type="button" onclick="deleteJob()" style="display:none">Delete</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" type="button" onclick="closeJobModal()">Cancel</button>
+        <button class="btn btn-primary" type="button" onclick="saveJob()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Coffee chat modal -->
+<div class="overlay" id="cc-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="margin-bottom:.5rem;font-size:15px;font-weight:600" id="cc-modal-title">Add coffee chat</div>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="inline-field" id="cc-name" placeholder="Name *" style="flex:1">
+        <input class="inline-field" id="cc-date" type="date" style="flex:1">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="inline-field" id="cc-position" placeholder="Their position / title" style="flex:1">
+        <input class="inline-field" id="cc-company" placeholder="Company" style="flex:1">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="inline-field" id="cc-linkedin" placeholder="LinkedIn URL" style="flex:1">
+        <input class="inline-field" id="cc-email" placeholder="Email" style="flex:1">
+      </div>
+      <div style="margin-bottom:8px">
+        <input class="inline-field" id="cc-context" placeholder="How you met (e.g. LinkedIn DM, alumni event, referral)">
+      </div>
+
+      <div class="section-label">Summary notes</div>
+      <textarea class="notes-field" id="cc-summary" placeholder="What did you talk about? Career advice, industry insights, company info..." style="margin-bottom:8px"></textarea>
+      <textarea class="notes-field" id="cc-actions" placeholder="Action items / next steps (e.g. send thank-you, apply to X, connect with Y)" style="min-height:54px"></textarea>
+
+      <div class="section-label">Tags</div>
+      <input class="inline-field" id="cc-tags" placeholder="e.g. fintech, product, career pivot (comma-separated)" style="margin-bottom:8px">
+
+      <div class="section-label">Follow-up</div>
+      <div style="display:flex;gap:8px">
+        <input class="inline-field" id="cc-fu-date" type="date" style="flex:1">
+        <input class="inline-field" id="cc-fu-note" placeholder="e.g. Send thank-you, check in" style="flex:2">
+        <select class="inline-field" id="cc-fu-status" style="flex:1;max-width:120px">
+          <option value="pending">Pending</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="cc-del-btn" onclick="deleteCC()" style="display:none">Delete</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="closeCCModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCC()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="job-tracker.js"></script>
+</body>
+</html>
+
