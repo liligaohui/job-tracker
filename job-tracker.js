@@ -31,7 +31,7 @@ const PROCESS_SORT_ORDERS = {
   'stage-asc': { Applied: 0, 'Phone screen': 1, Interview: 2, Offer: 3, Rejected: 4 },
 };
 const JK = 'jt_jobs_v3', CK = 'jt_chats_v1';
-const SYNC_DB = 'jt_sync_handles_v1';
+const SYNC_DB = 'jt_sync_handles_v2';
 const SYNC_STORE = 'handles';
 const SYNC_FOLDER_KEY = 'csv-folder';
 const SYNC_FILES = {
@@ -645,13 +645,12 @@ function refreshSyncFolderHint() {
   const hint = document.getElementById('sync-folder-hint');
   if (!hint) return;
 
-  const detectedPath = getDetectedAppFolderPath();
-  if (detectedPath) {
-    hint.textContent = `Suggested sync folder: ${detectedPath}`;
+  if (getDetectedAppFolderPath()) {
+    hint.textContent = 'Suggested sync folder: this same folder as job-tracker.html, the CSV files, and JobTracker.xlsx.';
     return;
   }
 
-  hint.textContent = 'Suggested sync folder: Choose the folder that contains job-tracker.html, job-tracker.js, and job-tracker.css.';
+  hint.textContent = 'Suggested sync folder: Choose the folder that contains job-tracker.html, job-tracker.js, job-tracker.css, and JobTracker.xlsx.';
 }
 
 function getDetectedAppFolderPath() {

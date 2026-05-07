@@ -77,7 +77,7 @@ Then Excel reads those CSV files through [JobTracker.xlsx](./JobTracker.xlsx).
 Important notes:
 
 - Use Chrome or Edge for `Connect CSV sync`
-- Choose the app folder, not `JobTracker.xlsx`
+- Keep `job-tracker.html`, the CSV files, and `JobTracker.xlsx` in the same folder
 - Keep the raw CSV files closed while syncing
 - Excel does not sync changes back into the HTML app
 
@@ -122,15 +122,17 @@ Career Hub itself is portable because the HTML, CSS, and JS files use relative p
 
 That means someone else can download the zip to a different folder on their computer and still open the app normally.
 
+`JobTracker.xlsx` is also set up to read `applications.csv`, `coffee-chats.csv`, and `interview-rounds.csv` by file name from the same folder, so moving the whole folder together keeps those links intact.
+
 Two things do not automatically move with the files:
 
 - browser-saved records in `localStorage`
-- Excel CSV connections inside `JobTracker.xlsx`
+- the browser's remembered CSV sync folder choice
 
 If someone else uses the project on another computer, they may need to:
 
 - import a backup JSON file if they want existing app data
-- reconnect the CSV files in Excel on their own machine
+- reconnect CSV sync in the browser on their own machine
 
 ## Author
 

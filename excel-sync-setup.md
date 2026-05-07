@@ -43,7 +43,8 @@ Instead:
 
 1. Open Excel.
 2. Create a new workbook.
-3. Save it as:
+3. Save it in the same folder as `job-tracker.html` and the synced CSV files.
+4. Save it as:
    - `JobTracker.xlsx` if you only want refresh on open or manual refresh
    - `JobTracker.xlsm` if you want timed auto-refresh with the macro below
 
@@ -53,7 +54,7 @@ For each file:
 
 1. Go to `Data`.
 2. Click `From Text/CSV`.
-3. Choose one of:
+3. Choose one of the CSV files in that same folder:
    - `applications.csv`
    - `coffee-chats.csv`
    - `interview-rounds.csv`
